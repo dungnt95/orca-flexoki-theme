@@ -30,7 +30,27 @@ function flatten(hex, background) {
   return `#${mixed.map((value) => value.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
 }
 
+const rgb = (hex) => [0, 1, 2].map((i) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16));
+function contrast(a, b) {
+  const luminance = (hex) => {
+    const [r, g, bl] = rgb(hex).map((v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+}
+// Orca drops a text/surface token pair under 4.5:1 and paints its own neutral defaults instead
+// (Flexoki light tx-2 #6F6E69 on bg-2 #F2F0E5 is 4.47:1). Nudge the text toward `ink` just enough.
+function readable(text, surfaces, ink, min = 4.6) {
+  for (let percent = 0; percent <= 100; percent++) {
+    const mixed = `#${rgb(text).map((v, i) => Math.round(v + (rgb(ink)[i] - v) * percent / 100).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+    if (surfaces.every((surface) => contrast(mixed, surface) >= min)) return mixed;
+  }
+  return ink;
+}
+
 function appTokens(c, accent) {
+  const mutedText = readable(c.mutedForeground, [c.canvas, c.surface, c.muted, c.toolbar], c.text);
   return {
     '--background': c.canvas,
     '--editor-surface': c.surface,
@@ -44,7 +64,7 @@ function appTokens(c, accent) {
     '--secondary': c.secondary,
     '--secondary-foreground': c.secondaryForeground,
     '--muted': c.muted,
-    '--muted-foreground': c.mutedForeground,
+    '--muted-foreground': mutedText,
     '--accent': c.sidebarRowHover,
     '--accent-foreground': c.text,
     '--border': c.border,
@@ -78,7 +98,7 @@ function appTokens(c, accent) {
     '--tab-active-foreground': c.toolbarForeground,
     '--tab-active-indicator': c.accent,
     '--tab-inactive': c.toolbar,
-    '--tab-inactive-foreground': c.textMuted,
+    '--tab-inactive-foreground': mutedText,
     '--split-divider': c.toolbarBorder,
     '--split-divider-hover': c.focus,
     '--chat-user-message': c.messageSurface,
@@ -100,7 +120,7 @@ function appTokens(c, accent) {
     '--git-decoration-renamed': accent.blue,
     '--git-decoration-untracked': accent.cyan,
     '--git-decoration-copied': accent.purple,
-    '--git-decoration-ignored': c.placeholder
+    '--git-decoration-ignored': c.iconMuted
   };
 }
 

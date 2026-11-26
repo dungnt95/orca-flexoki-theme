@@ -14,7 +14,7 @@
     "--secondary": "#E6E4D9",
     "--secondary-foreground": "#100F0F",
     "--muted": "#F2F0E5",
-    "--muted-foreground": "#6F6E69",
+    "--muted-foreground": "#6D6C67",
     "--accent": "#E6E4D9",
     "--accent-foreground": "#100F0F",
     "--border": "#DAD8CE",
@@ -48,7 +48,7 @@
     "--tab-active-foreground": "#100F0F",
     "--tab-active-indicator": "#205EA6",
     "--tab-inactive": "#F2F0E5",
-    "--tab-inactive-foreground": "#6F6E69",
+    "--tab-inactive-foreground": "#6D6C67",
     "--split-divider": "#DAD8CE",
     "--split-divider-hover": "#205EA6",
     "--chat-user-message": "#E6E4D9",
@@ -70,7 +70,7 @@
     "--git-decoration-renamed": "#205EA6",
     "--git-decoration-untracked": "#24837B",
     "--git-decoration-copied": "#5E409D",
-    "--git-decoration-ignored": "#B7B5AC"
+    "--git-decoration-ignored": "#878580"
   },
   "tokenColors": [
     {

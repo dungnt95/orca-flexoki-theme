@@ -22,24 +22,30 @@ Then pick **Flexoki Light** or **Flexoki Dark** in Orca's theme picker, and the 
 
 ## Files
 
-| Path                      | Role                                                           |
-| ------------------------- | -------------------------------------------------------------- |
-| `src/flexoki-source.json` | App color spec (light `colors` + `variants.dark`); edit this   |
-| `src/vscode/*.json`       | Upstream syntax colors from kepano/flexoki (MIT)               |
-| `scripts/build.mjs`       | Maps the spec to Orca tokens; writes `themes/` and `terminal/` |
-| `themes/`, `terminal/`    | Generated; do not edit by hand                                 |
+| Path                        | Role                                                                    |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `src/flexoki-source.json`   | App color spec (light `colors` + `variants.dark`); edit this            |
+| `src/vscode/*.json`         | Upstream syntax colors from kepano/flexoki (MIT)                        |
+| `scripts/build.mjs`         | Maps the spec to Orca tokens; writes `themes/` and `terminal/`          |
+| `scripts/check-contrast.mjs`| Lists tokens Orca would drop for low contrast; must print no `✗`        |
+| `scripts/images.mjs`        | Renders `images/` (cover and screenshots) from the generated themes     |
+| `themes/`, `terminal/`      | Generated; do not edit by hand                                          |
 
 ## Develop
 
 ```sh
 node scripts/build.mjs
+node scripts/check-contrast.mjs
+node scripts/images.mjs        # needs Google Chrome and sharp
 orca plugin validate . --json
 orca plugin dev load .
 ```
 
 ## Spec keys Orca cannot use
 
-Orca's public theme API has no token for these, so they are not applied: `toolbarControlHover`, `placeholder`, `iconMuted`, `secondaryLabel`, `sidebarControlSurface`, `sidebarMutedForeground`, `warningSurface`, `messageAction*`, `searchMatch*`, `terminalScrollbar*`, and every `*Foreground` paired with error/warning/update.
+Orca drops a text/surface token pair below 4.5:1 (3:1 for git colors) and paints its own neutral defaults instead. Flexoki light `tx-2` (`#6F6E69`) on `bg-2` (`#F2F0E5`) is 4.47:1, which made segmented controls and inactive tabs fall back to gray. The build nudges muted text toward `tx` just enough to pass (`#6D6C67` in light; dark is unchanged), and ignored files use `#878580`.
+
+Orca's public theme API has no token for these, so they are not applied: `toolbarControlHover`, `placeholder`, `secondaryLabel`, `sidebarControlSurface`, `sidebarMutedForeground`, `warningSurface`, `messageAction*`, `searchMatch*`, `terminalScrollbar*`, and every `*Foreground` paired with error/warning/update.
 
 Translucent `terminalSelection` is flattened onto the terminal background, because Orca terminal colors accept opaque hex only.
 

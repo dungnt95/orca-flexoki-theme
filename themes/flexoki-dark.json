@@ -70,7 +70,7 @@
     "--git-decoration-renamed": "#4385BE",
     "--git-decoration-untracked": "#3AA99F",
     "--git-decoration-copied": "#8B7EC8",
-    "--git-decoration-ignored": "#575653"
+    "--git-decoration-ignored": "#878580"
   },
   "tokenColors": [
     {
