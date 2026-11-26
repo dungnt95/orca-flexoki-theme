@@ -16,11 +16,26 @@ const rel = (p) => join(root, p);
 
 // ---------------------------------------------------------------------------
 // Size normalization: Orca draws every icon in a fixed 12x12 box with `contain`, so each SVG's viewBox is
-// rewritten to a square centered on its painted bounds; the longer side fills FILL of the box.
+// rewritten to a square around its painted bounds; the longer side fills FILL of the box.
+// Vertical alignment: Orca centers the 12x12 icon box on the row, but a text line's x-height center sits lower,
+// so artwork looked too high. Two rules fix that without touching geometry:
+//   1. OFFSET_Y: artwork moves DOWN by OFFSET_Y * side (the viewBox origin moves up). The only room for this is the
+//      empty margin, so (1 - FILL) / 2 >= OFFSET_Y must hold (checked below, FILL_EXCEPTIONS included).
+//   2. Optical center: the vertical center is a blend (INK_BLEND) of the bounding-box center and the alpha-weighted
+//      ink center, so bottom-heavy artwork (image, folder base) and top-heavy artwork both read centered.
+//      If the blended center would clip the artwork, the side grows just enough to keep every pixel inside.
 // FILL_EXCEPTIONS (icon file id -> fill) is for optical balance of icons that look oversized.
 // ---------------------------------------------------------------------------
-const FILL = 0.92;
+// Tuned on a simulated Orca row (13 px text, 26 px row): 0.82/0.09 centered within 0.5 px but shrank ink to
+// ~10 px; 0.86/0.07 keeps ~10.3 px ink and leaves icons ~0.7 px above the x-height center.
+const FILL = 0.86;
+const OFFSET_Y = 0.07;
+const INK_BLEND = 0.25; // 0 = bbox center, 1 = ink-weighted center
 const FILL_EXCEPTIONS = { c: 0.7, h: 0.7, yaml: 0.7 }; // single big glyphs that otherwise tower over the wordmark icons
+
+for (const [id, f] of Object.entries({ '*': FILL, ...FILL_EXCEPTIONS })) {
+  if ((1 - f) / 2 < OFFSET_Y - 1e-9) throw new Error(`FILL ${f} (${id}) leaves too little margin for OFFSET_Y ${OFFSET_Y}`);
+}
 
 // ---------------------------------------------------------------------------
 // Orca limits
@@ -714,10 +729,13 @@ async function paintedBounds(svg) {
     .replace(/currentColor/g, '#000000')
     .replace(/<svg\b([^>]*)>/, (all, attrs) => `<svg${attrs.replace(/\s(width|height)="[^"]*"/g, '')} width="${W}" height="${H}">`);
   const { data, info } = await sharp(Buffer.from(probe)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  let x0 = info.width, y0 = info.height, x1 = -1, y1 = -1;
+  let x0 = info.width, y0 = info.height, x1 = -1, y1 = -1, inkSum = 0, inkY = 0;
   for (let y = 0; y < info.height; y++) {
     for (let x = 0; x < info.width; x++) {
-      if (data[(y * info.width + x) * info.channels + 3] > 8) {
+      const alpha = data[(y * info.width + x) * info.channels + 3];
+      inkSum += alpha;
+      inkY += alpha * (y + 0.5);
+      if (alpha > 8) {
         if (x < x0) x0 = x;
         if (x > x1) x1 = x;
         if (y < y0) y0 = y;
@@ -727,14 +745,20 @@ async function paintedBounds(svg) {
   }
   if (x1 < 0) throw new Error('icon renders empty');
   const sx = vw / info.width, sy = vh / info.height;
-  return { x0: vx + x0 * sx, x1: vx + (x1 + 1) * sx, y0: vy + y0 * sy, y1: vy + (y1 + 1) * sy };
+  return { x0: vx + x0 * sx, x1: vx + (x1 + 1) * sx, y0: vy + y0 * sy, y1: vy + (y1 + 1) * sy, inkCy: vy + (inkY / inkSum) * sy };
 }
 async function normalizeViewBox(svg, id) {
   const b = await paintedBounds(svg);
   const fill = FILL_EXCEPTIONS[id] ?? FILL;
-  const side = Math.max(b.x1 - b.x0, b.y1 - b.y0) / fill;
-  const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
-  const viewBox = `${r2(cx - side / 2)} ${r2(cy - side / 2)} ${r2(side)} ${r2(side)}`;
+  const cx = (b.x0 + b.x1) / 2;
+  const cy = (1 - INK_BLEND) * ((b.y0 + b.y1) / 2) + INK_BLEND * b.inkCy;
+  // viewBox center = cy - OFFSET_Y * side; grow the side if that would clip the top or bottom of the artwork
+  const side = Math.max(
+    Math.max(b.x1 - b.x0, b.y1 - b.y0) / fill,
+    (b.y1 - cy) / (0.5 - OFFSET_Y),
+    (cy - b.y0) / (0.5 + OFFSET_Y)
+  );
+  const viewBox = `${r2(cx - side / 2)} ${r2(cy - side / 2 - OFFSET_Y * side)} ${r2(side)} ${r2(side)}`;
   return svg.replace(/<svg\b([^>]*)>/, (all, attrs) => `<svg${attrs.replace(/\s(width|height|viewBox)="[^"]*"/g, '')} viewBox="${viewBox}">`);
 }
 for (const [file, svg] of [...written].sort()) {
