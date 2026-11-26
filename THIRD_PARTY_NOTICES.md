@@ -17,8 +17,8 @@ the Pierre-derived icons are Apache-2.0 (see `LICENSES/Apache-2.0.txt`).
 - Author: Miguel Solorio. License: MIT. Copyright (c) 2020-22 Miguel Solorio. Full text: `src/symbols/LICENSE`.
 - Files: `src/symbols/` (vendored unmodified), the SVGs in `icons/` not listed under section 3, and the extra icons in `src/icons-extra/` (drawn for this plugin on Symbols' document and folder outlines).
 - Changes: SVGs sanitized for Orca (comments, editor metadata, `<style>` and unsupported attributes removed; style
-  declarations converted to attributes); generic file types recolored to `currentColor`, language and brand marks recolored to the
-  nearest Flexoki 500 accent; `csv` and `editorconfig` redrawn; viewBox normalized (square, cropped to the artwork, optical
+  declarations converted to attributes); neutral file types recolored to `currentColor`, file-type groups (docs, data/config, tables, images, media, archives) and
+  language and brand marks recolored to a single Flexoki 500 accent; `csv` and `editorconfig` redrawn; viewBox normalized (square, cropped to the artwork, optical
   vertical offset); file and extension mappings merged from the upstream theme's `fileNames`, `fileExtensions` and
   `languageIds` and pruned to Orca's 512-mapping limit.
 

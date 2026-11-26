@@ -54,13 +54,14 @@ const MAX_SVG_BYTES = 64 * 1024;
 const EXT_KEY = /^[A-Za-z0-9][A-Za-z0-9+._-]{0,31}$/;
 
 // ---------------------------------------------------------------------------
-// Flexoki 500 accents (readable on both the light and dark sidebar)
+// Flexoki 500 accents (readable on both the light and dark sidebar). Green is the canonical light `gr`
+// (green-600): green-500 #768D21 read muddy; #66800B is more saturated and still 3.9:1 / 3.8:1 on both sidebars.
 // ---------------------------------------------------------------------------
 const FLEXOKI = {
   red: '#C03E35',
   orange: '#CB6120',
   yellow: '#BE9207',
-  green: '#768D21',
+  green: '#66800B',
   cyan: '#2F968D',
   blue: '#3171B2',
   purple: '#735EB5',
@@ -475,6 +476,32 @@ for (const id of [...used].sort()) {
   }
   if (!svg.startsWith('<svg')) throw new Error(`${id}: output does not start with <svg`);
   svgOf.set(id, { svg, kind });
+}
+
+// ---------------------------------------------------------------------------
+// File-type group colors: currently-mono icons that become single-accent color icons (currentColor -> Flexoki 500
+// accent; opacity layers kept). Pierre replacements below inherit the accent through accentOf().
+//   docs green | structured data/config orange | tables and databases cyan | images magenta | media purple | archives yellow
+// Everything else stays mono: document, text, log, locks, env/gear (also toml), license, font, shell, folders, certificate,
+// mermaid, excalidraw, lottie, editorconfig, ...
+// ---------------------------------------------------------------------------
+const GROUP_COLORS = {
+  markdown: 'green', mdx: 'green', readme: 'green', // docs
+  'brackets-yellow': 'orange', yaml: 'orange', xml: 'orange', // json (and jsonc/json5), yaml, xml
+  csv: 'cyan', database: 'cyan', // tables, sql, databases
+  image: 'magenta', gif: 'magenta', // images
+  video: 'purple', audio: 'purple', // media
+  compressed: 'yellow' // archives
+};
+const groupLog = [];
+for (const [id, accent] of Object.entries(GROUP_COLORS)) {
+  const entry = svgOf.get(id);
+  if (!entry || entry.kind !== 'mono') {
+    console.warn(`note: GROUP_COLORS ${id} skipped (not a mono icon in use)`);
+    continue;
+  }
+  svgOf.set(id, { ...entry, svg: entry.svg.replace(/currentColor/g, FLEXOKI[accent]), kind: 'color' });
+  groupLog.push(`${id} -> ${accent} ${FLEXOKI[accent]}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -908,6 +935,7 @@ for (const e of Object.values(extras)) extraKinds[e.kind]++;
 console.log(`Pierre equivalence (token -> our ids [paint]):\n  ${pierreTable.join('\n  ')}`);
 console.log(`pierre-derived icon files: ${[...pierreFiles].sort().join(',')}`);
 console.log(`Symbols icons kept despite a related Pierre glyph: ${Object.keys(PIERRE_KEPT_OURS).join(', ')}`);
+console.log(`Group colors (mono -> accent): ${groupLog.join('; ')}`);
 console.log(`classification: mono ${bucket.mono.length}, color ${bucket.color.length}, drop ${bucket.drop.length}`);
 console.log(`emitted upstream icons: mono ${emitted.mono}, color ${emitted.color}; extras: mono ${extraKinds.mono}, color ${extraKinds.color}; folder 1`);
 console.log(`counts before pruning (merged with ${langAdded} language-derived extensions): fileExtensions ${before.fileExtensions}, fileNames ${before.fileNames}`);
