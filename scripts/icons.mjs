@@ -481,14 +481,15 @@ for (const id of [...used].sort()) {
 // ---------------------------------------------------------------------------
 // File-type group colors: currently-mono icons that become single-accent color icons (currentColor -> Flexoki 500
 // accent; opacity layers kept). Pierre replacements below inherit the accent through accentOf().
-//   docs green | structured data/config orange | tables and databases cyan | images magenta | media purple | archives yellow
+//   docs cyan | structured data/config orange | tables and databases blue | images magenta | media purple | archives yellow
+// (Docs use the cyan the user picked; tables/databases move to blue so the two groups stay distinct.)
 // Everything else stays mono: document, text, log, locks, env/gear (also toml), license, font, shell, folders, certificate,
 // mermaid, excalidraw, lottie, editorconfig, ...
 // ---------------------------------------------------------------------------
 const GROUP_COLORS = {
-  markdown: 'green', mdx: 'green', readme: 'green', // docs
+  markdown: 'cyan', mdx: 'cyan', readme: 'cyan', // docs
   'brackets-yellow': 'orange', yaml: 'orange', xml: 'orange', // json (and jsonc/json5), yaml, xml
-  csv: 'cyan', database: 'cyan', // tables, sql, databases
+  csv: 'blue', database: 'blue', // tables, sql, databases
   image: 'magenta', gif: 'magenta', // images
   video: 'purple', audio: 'purple', // media
   compressed: 'yellow' // archives
