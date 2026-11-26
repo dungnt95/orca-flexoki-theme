@@ -32,6 +32,9 @@ const FILL = 0.86;
 const OFFSET_Y = 0.07;
 const INK_BLEND = 0.25; // 0 = bbox center, 1 = ink-weighted center
 const FILL_EXCEPTIONS = { c: 0.7, h: 0.7, yaml: 0.7 }; // single big glyphs that otherwise tower over the wordmark icons
+// Why readme: its open book already reads ~1 px lower than other icons before any shift (measured on the
+// user's Orca screenshot: -1 px vs -3 px), so the global OFFSET_Y pushed it below the text center.
+const OFFSET_Y_EXCEPTIONS = { readme: 0 };
 
 for (const [id, f] of Object.entries({ '*': FILL, ...FILL_EXCEPTIONS })) {
   if ((1 - f) / 2 < OFFSET_Y - 1e-9) throw new Error(`FILL ${f} (${id}) leaves too little margin for OFFSET_Y ${OFFSET_Y}`);
@@ -750,15 +753,16 @@ async function paintedBounds(svg) {
 async function normalizeViewBox(svg, id) {
   const b = await paintedBounds(svg);
   const fill = FILL_EXCEPTIONS[id] ?? FILL;
+  const offsetY = OFFSET_Y_EXCEPTIONS[id] ?? OFFSET_Y;
   const cx = (b.x0 + b.x1) / 2;
   const cy = (1 - INK_BLEND) * ((b.y0 + b.y1) / 2) + INK_BLEND * b.inkCy;
   // viewBox center = cy - OFFSET_Y * side; grow the side if that would clip the top or bottom of the artwork
   const side = Math.max(
     Math.max(b.x1 - b.x0, b.y1 - b.y0) / fill,
-    (b.y1 - cy) / (0.5 - OFFSET_Y),
-    (cy - b.y0) / (0.5 + OFFSET_Y)
+    (b.y1 - cy) / (0.5 - offsetY),
+    (cy - b.y0) / (0.5 + offsetY)
   );
-  const viewBox = `${r2(cx - side / 2)} ${r2(cy - side / 2 - OFFSET_Y * side)} ${r2(side)} ${r2(side)}`;
+  const viewBox = `${r2(cx - side / 2)} ${r2(cy - side / 2 - offsetY * side)} ${r2(side)} ${r2(side)}`;
   return svg.replace(/<svg\b([^>]*)>/, (all, attrs) => `<svg${attrs.replace(/\s(width|height|viewBox)="[^"]*"/g, '')} viewBox="${viewBox}">`);
 }
 for (const [file, svg] of [...written].sort()) {
