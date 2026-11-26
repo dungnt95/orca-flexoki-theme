@@ -1,0 +1,44 @@
+{
+  "manifestVersion": 2,
+  "id": "flexoki-theme",
+  "name": "Flexoki for Orca",
+  "version": "1.0.0",
+  "description": "Flexoki, the inky color scheme for prose and code by Steph Ango (stephango.com/flexoki), as Light and Dark app themes with matching syntax and terminal colors.",
+  "author": {
+    "name": "Dzung Nguyen",
+    "url": "https://github.com/dungnt95"
+  },
+  "repository": "https://github.com/dungnt95/orca-flexoki-theme",
+  "homepage": "https://stephango.com/flexoki",
+  "license": "MIT",
+  "engines": {
+    "orca": ">=1.4.246"
+  },
+  "execution": "data",
+  "contributes": {
+    "themes": [
+      {
+        "id": "flexoki-light",
+        "title": "Flexoki Light",
+        "path": "themes/flexoki-light.json"
+      },
+      {
+        "id": "flexoki-dark",
+        "title": "Flexoki Dark",
+        "path": "themes/flexoki-dark.json"
+      }
+    ],
+    "terminalThemes": [
+      {
+        "id": "flexoki-light",
+        "title": "Flexoki Light",
+        "path": "terminal/flexoki-light.json"
+      },
+      {
+        "id": "flexoki-dark",
+        "title": "Flexoki Dark",
+        "path": "terminal/flexoki-dark.json"
+      }
+    ]
+  }
+}
