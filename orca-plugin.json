@@ -13,7 +13,7 @@
   "license": "MIT",
   "cover": {
     "path": "images/cover.png",
-    "alt": "Flexoki Light and Flexoki Dark Orca windows side by side, each with a file tree, syntax-highlighted TypeScript, terminal output and the Flexoki palette"
+    "alt": "Flexoki Light and Dark Orca windows: file tree with Flexoki Symbols icons, highlighted TypeScript, terminal and palette"
   },
   "screenshots": [
     {
@@ -27,6 +27,11 @@
       "alt": "Orca in Flexoki Dark: inky black background, file tree with git colors, highlighted TypeScript and a terminal",
       "caption": "Flexoki Dark",
       "theme": "dark"
+    },
+    {
+      "path": "images/flexoki-symbols.png",
+      "alt": "Flexoki Symbols file icons",
+      "caption": "Flexoki Symbols file icons"
     }
   ],
   "engines": {
@@ -56,6 +61,13 @@
         "id": "flexoki-dark",
         "title": "Flexoki Dark",
         "path": "terminal/flexoki-dark.json"
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "flexoki-symbols",
+        "title": "Flexoki Symbols",
+        "path": "icons/theme.json"
       }
     ]
   }

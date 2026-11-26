@@ -66,27 +66,36 @@ function codeHtml(theme) {
   }).join('');
 }
 
+const iconTheme = readJson('icons/theme.json');
+
 function windowHtml(mode, box, title = 'notes — Orca') {
   const theme = readJson(`themes/flexoki-${mode}.json`);
   const term = readJson(`terminal/flexoki-${mode}.json`).terminal;
   const t = theme.tokens;
   const files = [
-    [0, 'src', 'folder'],
+    [0, 'src', 'folder-open'],
     [1, 'note.ts', 'modified', true],
     [1, 'palette.ts', 'added'],
-    [1, 'render.ts'],
-    [0, 'drafts', 'folder'],
+    [1, 'App.tsx'],
+    [0, 'drafts', 'folder-open'],
     [1, 'ink.md', 'untracked'],
-    [0, 'package.json'],
+    [0, 'data', 'folder-open'],
+    [1, 'report.xlsx'],
+    [1, 'brief.docx'],
+    [0, 'Dockerfile'],
+    [0, 'package.json', 'modified'],
+    [0, 'pnpm-lock.yaml'],
     [0, 'README.md'],
-    [0, 'tsconfig.json']
+    [0, '.gitignore'],
+    [0, 'main.py']
   ];
   const decoration = { modified: ['--git-decoration-modified', 'M'], added: ['--git-decoration-added', 'A'], untracked: ['--git-decoration-untracked', 'U'] };
   const tree = files.map(([depth, name, state, active]) => {
     const [token, badge] = decoration[state] ?? [];
+    const folder = state === 'folder' || state === 'folder-open';
     const color = token ? t[token] : t['--worktree-sidebar-foreground'];
     return `<div class="file${active ? ' active' : ''}" style="padding-left:${18 + depth * 18}px;color:${color}">
-      <span class="dot" style="background:${state === 'folder' ? t['--muted-foreground'] : color}"></span><span class="name">${name}</span>${badge ? `<span class="badge">${badge}</span>` : ''}</div>`;
+      ${iconSvg(name, folder ? state : 'file', color)}<span class="name">${name}</span>${badge ? `<span class="badge">${badge}</span>` : ''}</div>`;
   }).join('');
   const swatches = [...BASES[mode], ...ACCENTS[mode]].map((c) => `<span style="background:${c}"></span>`).join('');
   return `<div class="window ${mode}" style="${box};
@@ -99,7 +108,7 @@ function windowHtml(mode, box, title = 'notes — Orca') {
     <div class="body">
       <aside><div class="heading">EXPLORER</div>${tree}</aside>
       <main>
-        <div class="tabs"><span class="tab current">note.ts</span><span class="tab">palette.ts</span><span class="tab">README.md</span></div>
+        <div class="tabs"><span class="tab current">${iconSvg('note.ts', 'file', t['--tab-active-foreground'])}note.ts</span><span class="tab">${iconSvg('palette.ts', 'file', t['--tab-inactive-foreground'])}palette.ts</span><span class="tab">${iconSvg('README.md', 'file', t['--tab-inactive-foreground'])}README.md</span></div>
         <div class="code">${codeHtml(theme)}</div>
         <div class="panel-head"><span>TERMINAL</span><span class="dim">zsh — notes</span></div>
         <div class="terminal">
@@ -146,17 +155,71 @@ main { flex: 1; display: flex; flex-direction: column; min-width: 0; background:
 .cursor { display: inline-block; width: 8px; height: 17px; vertical-align: -3px; background: var(--cursor); }
 .swatches { position: absolute; right: 24px; bottom: 22px; display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .swatches span { width: 30px; height: 28px; }
+.file svg, .tab svg { width: 16px; height: 16px; flex: none; display: block; }
+.tab { gap: 8px; }
+.gtitle { position: absolute; left: 0; right: 0; top: 46px; text-align: center; color: #100F0F; }
+.gtitle h1 { font: 600 44px/1 -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; letter-spacing: -.01em; }
+.gtitle p { margin-top: 14px; font-size: 17px; color: #6F6E69; }
+.gpanel { position: absolute; top: 170px; width: 700px; height: 770px; border-radius: 14px; padding: 30px 32px; border: 1px solid; box-shadow: 0 30px 80px rgba(16,15,15,.18), 0 4px 14px rgba(16,15,15,.10); }
+.gpanel .ghead { font-size: 12px; font-weight: 600; letter-spacing: .08em; margin-bottom: 18px; }
+.ggrid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 66px; }
+.gitem { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.gitem svg { width: 28px; height: 28px; display: block; }
+.gitem span { font-size: 12px; white-space: nowrap; }
 `;
 
 const page = (background, windows) => `<!doctype html><html><head><meta charset="utf-8"><style>${CSS}</style></head>
 <body style="background:${background}">${windows}</body></html>`;
+
+// Orca's rule: exact fileName, then the longest dotted suffix as an extension (case-insensitive), else the file icon.
+function iconPath(name, kind) {
+  if (kind === 'folder') return iconTheme.icons.folder;
+  if (kind === 'folder-open') return iconTheme.icons['folder-open'];
+  const lower = name.toLowerCase();
+  if (iconTheme.fileNames[lower]) return iconTheme.fileNames[lower];
+  const parts = lower.split('.');
+  for (let i = 1; i < parts.length; i++) {
+    const hit = iconTheme.fileExtensions[parts.slice(i).join('.')];
+    if (hit) return hit;
+  }
+  return iconTheme.icons.file;
+}
+// Mono icons only use currentColor; paint it with the row's text color. Color icons stay as drawn.
+function iconSvg(name, kind, color) {
+  return readFileSync(join(root, iconPath(name, kind)), 'utf8').trim().replace(/currentColor/g, color);
+}
+
+const GALLERY = [
+  ['folder', '', 'folder'], ['folder-open', '', 'folder-open'], ['file', 'unknown.xyz'], ['README.md', 'README.md'],
+  ['note.md', 'note.md'], ['notes.txt', 'notes.txt'], ['LICENSE', 'LICENSE'], ['lock file', 'a.lock'],
+  ['main.ts', 'main.ts'], ['main.test.ts', 'main.test.ts'], ['App.tsx', 'App.tsx'], ['index.js', 'index.js'],
+  ['main.py', 'main.py'], ['main.rs', 'main.rs'], ['main.go', 'main.go'], ['Main.java', 'Main.java'],
+  ['App.swift', 'App.swift'], ['App.kt', 'App.kt'], ['index.php', 'index.php'], ['app.rb', 'app.rb'],
+  ['App.vue', 'App.vue'], ['style.css', 'style.css'], ['style.scss', 'style.scss'], ['index.html', 'index.html'],
+  ['data.json', 'data.json'], ['config.yaml', 'config.yaml'], ['query.sql', 'query.sql'], ['run.sh', 'run.sh'],
+  ['Dockerfile', 'Dockerfile'], ['package.json', 'package.json'], ['pnpm-lock.yaml', 'pnpm-lock.yaml'], ['tsconfig.json', 'tsconfig.json'],
+  ['.gitignore', '.gitignore'], ['.env', '.env'], ['report.xlsx', 'report.xlsx'], ['brief.docx', 'brief.docx'],
+  ['deck.pptx', 'deck.pptx'], ['paper.pdf', 'paper.pdf'], ['photo.png', 'photo.png'], ['clip.mp4', 'clip.mp4']
+];
+
+function galleryHtml() {
+  const panel = (mode, left) => {
+    const t = readJson(`themes/flexoki-${mode}.json`).tokens;
+    const fg = t['--worktree-sidebar-foreground'];
+    const cells = GALLERY.map(([label, file, kind]) => `<div class="gitem">${iconSvg(file, kind, fg)}<span>${escape(label)}</span></div>`).join('');
+    return `<div class="gpanel" style="left:${left}px;background:${t['--worktree-sidebar']};border-color:${t['--worktree-sidebar-border']};color:${fg}">
+      <div class="ghead" style="color:${t['--muted-foreground']}">FLEXOKI ${mode.toUpperCase()}</div><div class="ggrid">${cells}</div></div>`;
+  };
+  return `<div class="gtitle"><h1>Flexoki Symbols</h1><p>Based on Symbols by Miguel Solorio (MIT)</p></div>${panel('light', 80)}${panel('dark', 820)}`;
+}
 
 const LAYOUTS = {
   'flexoki-light': page('#E6E4D9', windowHtml('light', 'left:90px;top:80px;width:1420px;height:840px')),
   'flexoki-dark': page('#1C1B1A', windowHtml('dark', 'left:90px;top:80px;width:1420px;height:840px')),
   cover: page('linear-gradient(135deg,#F2F0E5 0%,#F2F0E5 50%,#282726 50%,#282726 100%)',
     windowHtml('dark', 'left:520px;top:170px;width:1000px;height:800px') +
-    windowHtml('light', 'left:80px;top:40px;width:1000px;height:800px'))
+    windowHtml('light', 'left:80px;top:40px;width:1000px;height:800px')),
+  'flexoki-symbols': page('#E6E4D9', galleryHtml())
 };
 
 const work = join(root, '.work');

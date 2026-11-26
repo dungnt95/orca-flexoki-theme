@@ -1,0 +1,117 @@
+{
+  "folder-open": {
+    "file": "folder-open.svg",
+    "kind": "mono",
+    "fileExtensions": [],
+    "fileNames": [],
+    "slot": "folder-open"
+  },
+  "docx": {
+    "file": "docx.svg",
+    "kind": "color",
+    "fileExtensions": [
+      "docx",
+      "doc",
+      "docm",
+      "dotx",
+      "odt",
+      "pages"
+    ],
+    "fileNames": []
+  },
+  "pptx": {
+    "file": "pptx.svg",
+    "kind": "color",
+    "fileExtensions": [
+      "pptx",
+      "ppt",
+      "pptm",
+      "potx",
+      "odp",
+      "key"
+    ],
+    "fileNames": []
+  },
+  "xlsx": {
+    "file": "xlsx.svg",
+    "kind": "color",
+    "fileExtensions": [
+      "xlsx",
+      "xls",
+      "xlsm",
+      "xlsb",
+      "ods",
+      "numbers"
+    ],
+    "fileNames": []
+  },
+  "figma": {
+    "file": "figma.svg",
+    "kind": "color",
+    "fileExtensions": [
+      "fig",
+      "figjam",
+      "xd"
+    ],
+    "fileNames": []
+  },
+  "sketch": {
+    "file": "sketch.svg",
+    "kind": "color",
+    "fileExtensions": [
+      "sketch",
+      "afdesign"
+    ],
+    "fileNames": []
+  },
+  "log": {
+    "file": "log.svg",
+    "kind": "mono",
+    "fileExtensions": [
+      "log"
+    ],
+    "fileNames": []
+  },
+  "lottie": {
+    "file": "lottie.svg",
+    "kind": "mono",
+    "fileExtensions": [
+      "lottie"
+    ],
+    "fileNames": []
+  },
+  "excalidraw": {
+    "file": "excalidraw.svg",
+    "kind": "mono",
+    "fileExtensions": [
+      "excalidraw",
+      "excalidrawlib"
+    ],
+    "fileNames": []
+  },
+  "mermaid": {
+    "file": "mermaid.svg",
+    "kind": "mono",
+    "fileExtensions": [
+      "mmd",
+      "mermaid"
+    ],
+    "fileNames": []
+  },
+  "certificate": {
+    "file": "certificate.svg",
+    "kind": "mono",
+    "fileExtensions": [
+      "pem",
+      "crt",
+      "cer",
+      "cert",
+      "csr",
+      "p12",
+      "pfx",
+      "der",
+      "pub"
+    ],
+    "fileNames": []
+  }
+}
