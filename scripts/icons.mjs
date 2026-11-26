@@ -2,14 +2,25 @@
 // Base set: Symbols by Miguel Solorio (MIT) https://github.com/miguelsolorio/vscode-symbols
 //   vendored in src/symbols/ from upstream commit a405d32cca082d838ad7739b6d0044dea9dbbb79.
 // Extra icons drawn for this plugin live in src/icons-extra/ (extra.json + SVGs).
-// Run: node scripts/icons.mjs
+// Run: NODE_PATH=$HOME/.local/share/thought-partner/node/node_modules node scripts/icons.mjs
+// (needs the `sharp` package, resolved through NODE_PATH, to measure each icon's painted bounds)
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const sharp = createRequire(import.meta.url)('sharp');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const rel = (p) => join(root, p);
+
+// ---------------------------------------------------------------------------
+// Size normalization: Orca draws every icon in a fixed 12x12 box with `contain`, so each SVG's viewBox is
+// rewritten to a square centered on its painted bounds; the longer side fills FILL of the box.
+// FILL_EXCEPTIONS (icon file id -> fill) is for optical balance of icons that look oversized.
+// ---------------------------------------------------------------------------
+const FILL = 0.92;
+const FILL_EXCEPTIONS = { c: 0.7, h: 0.7, yaml: 0.7 }; // single big glyphs that otherwise tower over the wordmark icons
 
 // ---------------------------------------------------------------------------
 // Orca limits
@@ -692,7 +703,45 @@ for (const p of Object.values(slots)) {
 written.set('folder.svg', folderSvg);
 if (written.size > MAX_SVGS) throw new Error(`distinct SVGs ${written.size} > ${MAX_SVGS}`);
 
-for (const [file, svg] of [...written].sort()) writeFileSync(join(outDir, file), `${minify(svg)}\n`);
+const r2 = (n) => String(+n.toFixed(2));
+// Renders at 480 px (currentColor -> black) and returns the alpha bounding box in user units.
+async function paintedBounds(svg) {
+  const m = /<svg\b[^>]*\sviewBox="([^"]+)"/.exec(svg);
+  const [vx, vy, vw, vh] = m[1].trim().split(/[\s,]+/).map(Number);
+  const W = 480;
+  const H = Math.round((W * vh) / vw);
+  const probe = svg
+    .replace(/currentColor/g, '#000000')
+    .replace(/<svg\b([^>]*)>/, (all, attrs) => `<svg${attrs.replace(/\s(width|height)="[^"]*"/g, '')} width="${W}" height="${H}">`);
+  const { data, info } = await sharp(Buffer.from(probe)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  let x0 = info.width, y0 = info.height, x1 = -1, y1 = -1;
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      if (data[(y * info.width + x) * info.channels + 3] > 8) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+  if (x1 < 0) throw new Error('icon renders empty');
+  const sx = vw / info.width, sy = vh / info.height;
+  return { x0: vx + x0 * sx, x1: vx + (x1 + 1) * sx, y0: vy + y0 * sy, y1: vy + (y1 + 1) * sy };
+}
+async function normalizeViewBox(svg, id) {
+  const b = await paintedBounds(svg);
+  const fill = FILL_EXCEPTIONS[id] ?? FILL;
+  const side = Math.max(b.x1 - b.x0, b.y1 - b.y0) / fill;
+  const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+  const viewBox = `${r2(cx - side / 2)} ${r2(cy - side / 2)} ${r2(side)} ${r2(side)}`;
+  return svg.replace(/<svg\b([^>]*)>/, (all, attrs) => `<svg${attrs.replace(/\s(width|height|viewBox)="[^"]*"/g, '')} viewBox="${viewBox}">`);
+}
+for (const [file, svg] of [...written].sort()) {
+  const id = file.replace(/\.svg$/, '');
+  if (FILL_EXCEPTIONS[id] !== undefined) console.log(`note: optical fill exception ${id} = ${FILL_EXCEPTIONS[id]}`);
+  writeFileSync(join(outDir, file), `${await normalizeViewBox(minify(svg), id)}\n`);
+}
 
 const sortObj = (map, fmt) =>
   Object.fromEntries([...map].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([k, id]) => [k, fmt(id)]));

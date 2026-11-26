@@ -39,7 +39,7 @@ Then pick **Flexoki Light** or **Flexoki Dark** in Orca's theme picker, and the 
 ```sh
 node scripts/build.mjs
 node scripts/check-contrast.mjs
-node scripts/icons.mjs         # prints mono/color counts, unmapped hex and prune report
+NODE_PATH=$HOME/.local/share/thought-partner/node/node_modules node scripts/icons.mjs  # needs sharp; prints mono/color counts, unmapped hex and prune report
 node scripts/images.mjs        # needs Google Chrome and sharp
 orca plugin validate . --json
 orca plugin dev load .
