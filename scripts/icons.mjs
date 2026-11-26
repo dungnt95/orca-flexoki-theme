@@ -1,6 +1,8 @@
-// Generates icons/*.svg and icons/theme.json (the "Flexoki Symbols" file icon theme).
+// Generates icons/*.svg and icons/theme.json (the "Flexoki Icons" file icon theme).
 // Base set: Symbols by Miguel Solorio (MIT) https://github.com/miguelsolorio/vscode-symbols
 //   vendored in src/symbols/ from upstream commit a405d32cca082d838ad7739b6d0044dea9dbbb79.
+// Hybrid: where @pierre/trees 1.0.0 (Apache-2.0, Pierre Computer Company) has an icon for a file type, its glyph
+//   (vendored in src/pierre/, from the npm tarball, see src/pierre/SOURCE.md) replaces the Symbols artwork (PIERRE_MAP).
 // Extra icons drawn for this plugin live in src/icons-extra/ (extra.json + SVGs).
 // Run: NODE_PATH=$HOME/.local/share/thought-partner/node/node_modules node scripts/icons.mjs
 // (needs the `sharp` package, resolved through NODE_PATH, to measure each icon's painted bounds)
@@ -329,7 +331,8 @@ function sanitize(svg) {
     .replace(/<(sodipodi|inkscape):([a-zA-Z]+)\b[^>]*>[\s\S]*?<\/\1:\2>/g, '')
     .replace(/<(title|desc|metadata)\b[\s\S]*?<\/\1>/g, '')
     .replace(/\s(sodipodi|inkscape):[\w-]+="[^"]*"/g, '')
-    .replace(/\sxmlns:(svg|inkscape|sodipodi|v)="[^"]*"/g, '');
+    .replace(/\sxmlns:(svg|inkscape|sodipodi|v)="[^"]*"/g, '')
+    .replace(/\sclass="[^"]*"/g, '');
   // Paint declarations in style="..." become presentation attributes so they are recolored like the rest.
   s = s.replace(/<([a-zA-Z]+)\b([^>]*?)\sstyle="([^"]*)"([^>]*?)(\/?)>/g, (all, tag, pre, style, post, close) => {
     if (/^\s*mask-type:\s*alpha;?\s*$/.test(style)) return all;
@@ -474,6 +477,97 @@ for (const id of [...used].sort()) {
   svgOf.set(id, { svg, kind });
 }
 
+// ---------------------------------------------------------------------------
+// Pierre Trees icons (@pierre/trees 1.0.0, "complete" set; 16x16, one <symbol> per file type, vendored per token).
+// PIERRE_MAP is the equivalence table: Pierre token -> our Symbols icon ids whose ARTWORK it replaces.
+//   - Replacement is icon-level: every key that pointed at our icon keeps its mapping, the picture changes.
+//   - First id is the color source: mono stays mono (currentColor); color uses that icon's dominant Flexoki accent.
+//   - Extra ids (react-ts, docker-pink) are aliased to the first id so both resolve to the same Pierre file.
+// Derived from Pierre's own BUILT_IN_FILE_EXTENSION_TOKENS / BUILT_IN_FILE_NAME_TOKENS / COMPLETE_EXTENSION_OVERRIDES by
+// cross-tabulating each token's keys against our current icon for the same key. Where Pierre's notion is broader than
+// ours the narrower Symbols icon is kept (see PIERRE_KEPT_OURS), so e.g. .h, .gif, .mdx, README keep their own icon.
+// ---------------------------------------------------------------------------
+const PIERRE_COMMENT = '<!-- Derived from @pierre/trees 1.0.0 (Apache-2.0, © 2025 Pierre Computer Company); recolored and re-framed for Flexoki. See THIRD_PARTY_NOTICES.md. -->';
+const PIERRE_MAP = {
+  astro: ['astro'], babel: ['babel'], biome: ['biome'], browserslist: ['browserslist'], bun: ['bun'],
+  // c/cpp: Pierre's two circled-C badges are near-identical at 12 px and clash with Symbols' `h`, so Symbols keeps them.
+  claude: ['claude'], database: ['database'],
+  docker: ['docker', 'docker-pink'], eslint: ['eslint'], font: ['font'], git: ['git'], go: ['go'], graphql: ['graphql'],
+  image: ['image'], json: ['brackets-yellow'], markdown: ['markdown'],
+  nextjs: ['next'], oxc: ['oxc'], postcss: ['postcss'], prettier: ['prettier'], python: ['python'],
+  react: ['react', 'react-ts'], ruby: ['ruby'], rust: ['rust'], sass: ['sass'], stylelint: ['stylelint'],
+  svelte: ['svelte'], svg: ['svg'], swift: ['swift'], tailwind: ['tailwind'], terraform: ['terraform'],
+  text: ['text'], vite: ['vite'], vue: ['vue'], webpack: ['webpack'], zig: ['zig'],
+  zip: ['compressed']
+};
+// Pierre file types Symbols lacks: new ids with explicit paint and the extensions Pierre maps to them.
+const PIERRE_NEW = {
+  vscode: { paint: 'blue', exts: ['code-workspace'] },
+  mcp: { paint: 'mono', exts: ['mcp'] }
+};
+// Two-part logos: separable paths get two accents (bg = class "bg" path, fg = everything else).
+const PIERRE_TWO_TONE = { python: { fg: 'blue', bg: 'yellow' } };
+// Symbols icons deliberately kept although Pierre has a related glyph (Pierre's notion is broader or has no counterpart).
+// Pierre badge-style glyphs (a pale chip with tiny letters: ts, js, css, html, bash, yml, wasm) and its table icon were
+// compared against ours at 12/16 px (hybrid-sheet.png) and lose to the bolder Symbols wordmarks: ours kept.
+const PIERRE_KEPT_OURS = {
+  ts: 'Pierre typescript = pale badge, low contrast at 12 px', js: 'Pierre javascript = pale badge', 'brackets-purple': 'Pierre css = pale badge',
+  'code-orange': 'Pierre html is a pale # badge', shell: 'Pierre bash = tiny boxed prompt', yaml: 'Pierre yml glyph is cryptic at 12 px',
+  csv: 'Pierre table reads as a generic document', wasm: 'Pierre wasm badge too small, no Symbols icon: not added',
+  h: 'Pierre c covers .h too; ours distinguishes headers', gif: 'Pierre image covers gif; ours is distinct',
+  mdx: 'Pierre markdown covers mdx', readme: 'no Pierre README icon', 'js-test': 'Pierre has no test icons',
+  'ts-test': 'Pierre has no test icons', 'ts-types': 'Pierre typescript is broader than .d.ts', tsconfig: 'config file',
+  'react-test': 'Pierre has no test icons', 'go-mod': 'config file', 'svelte-ts': 'variant', 'svelte-service': 'variant',
+  'brackets-sky': 'Pierre css covers less/stylus, ours keeps them apart', stylus: 'Pierre css covers styl',
+  'brackets-orange': 'handlebars etc.', 'brackets-blue': 'Unity USS', 'brackets-red': 'jinja', document: 'default file icon',
+  node: 'Pierre has no package.json icon', npm: 'unused by Pierre tables', bootstrap: 'niche; Pierre bootstrap filenames skipped',
+  svgo: 'niche; Pierre svgo filenames skipped'
+};
+const accentOf = (id) => {
+  const counts = {};
+  for (const m of svgOf.get(id).svg.matchAll(/(?:fill|stroke)="(#[0-9A-Fa-f]{6})"/g)) {
+    const h = m[1].toUpperCase();
+    if (h !== FLEXOKI.neutral) counts[h] = (counts[h] || 0) + 1;
+  }
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? FLEXOKI.neutral;
+};
+function pierreSvg(token, paint) {
+  // paint: 'mono' | '#RRGGBB' | { fg, bg } (Flexoki hex)
+  let raw = readFileSync(rel(`src/pierre/files/${token}.svg`), 'utf8');
+  raw = raw.replace(/<(path|circle|rect|ellipse|polygon|line|polyline|stop)\b[^>]*>/g, (tag, name) => {
+    const role = /class="(\w+)"/.exec(tag)?.[1];
+    const color = paint === 'mono' ? 'currentColor' : typeof paint === 'string' ? paint : role === 'bg' ? paint.bg : paint.fg;
+    // gradient stops carry the color; url(#id) fills keep pointing at their gradient
+    tag = tag.replace(/\s(fill|stop-color)="currentcolor"/gi, (all, attr) => ` ${attr}="${color}"`);
+    if (name !== 'stop' && !/\sfill="/.test(tag)) tag = tag.replace(/^<(\w+)/, `<$1 fill="${color}"`);
+    return tag;
+  });
+  return sanitize(raw);
+}
+const pierreIds = new Set();
+const pierreAlias = new Map();
+const pierreTable = [];
+for (const [token, ids] of Object.entries(PIERRE_MAP)) {
+  const primary = ids[0];
+  if (!svgOf.has(primary)) {
+    console.warn(`note: Pierre ${token} not used, our ${primary} is unavailable`);
+    continue;
+  }
+  const { kind } = svgOf.get(primary);
+  const tone = PIERRE_TWO_TONE[token];
+  const paint = tone ? { fg: FLEXOKI[tone.fg], bg: FLEXOKI[tone.bg] } : kind === 'mono' ? 'mono' : accentOf(primary);
+  svgOf.set(primary, { svg: pierreSvg(token, paint), kind: tone ? 'color' : kind, pierre: true });
+  for (const other of ids.slice(1)) pierreAlias.set(other, primary);
+  pierreIds.add(primary);
+  pierreTable.push(`${token} -> ${ids.join(' + ')} [${tone ? `${tone.fg}+${tone.bg}` : paint === 'mono' ? 'mono' : paint}]`);
+}
+for (const [token, { paint, exts: e }] of Object.entries(PIERRE_NEW)) {
+  const p = paint === 'mono' ? 'mono' : FLEXOKI[paint];
+  svgOf.set(token, { svg: pierreSvg(token, p), kind: p === 'mono' ? 'mono' : 'color', pierre: true });
+  pierreIds.add(token);
+  pierreTable.push(`${token} -> (new) .${e.join(' .')} [${paint}]`);
+}
+
 // folder (uniform monochrome); folder-open comes from extras
 const folderSvg = toMono(sanitize(readFileSync(rel('src/symbols/folders/folder.svg'), 'utf8')), 'folder', report);
 
@@ -526,7 +620,7 @@ for (const [k, id] of Object.entries(upstream.fileNames)) if (!names.has(lower(k
 // Supplemental keys upstream lacks (exact names / extensions). Added only when absent.
 const ADD_NAMES = {
   'docker-compose.yml': 'docker-pink', 'docker-compose.yaml': 'docker-pink', 'compose.yml': 'docker-pink',
-  'compose.yaml': 'docker-pink', 'docker-compose.override.yml': 'docker-pink', 'docker-compose.override.yaml': 'docker-pink',
+  'compose.yaml': 'docker-pink', 'docker-compose.override.yml': 'docker', 'docker-compose.override.yaml': 'docker-pink',
   makefile: 'gear', gnumakefile: 'gear', gemfile: 'ruby', procfile: 'gear', codeowners: 'gear', '.ds_store': 'gear',
   licence: 'license', '.env.example': 'gear', '.env.production': 'gear', '.env.development': 'gear', '.env.test': 'gear',
   'agents.md': 'markdown', 'readme.txt': 'readme', readme: 'readme', '.python-version': 'python'
@@ -542,6 +636,8 @@ for (const [id, e] of Object.entries(extras)) {
   for (const x of e.fileExtensions || []) exts.set(lower(x), id);
   for (const n of e.fileNames || []) names.set(lower(n), id);
 }
+for (const map of [exts, names]) for (const [k, id] of map) if (pierreAlias.has(id)) map.set(k, pierreAlias.get(id));
+for (const [token, { exts: e }] of Object.entries(PIERRE_NEW)) for (const x of e) if (!exts.has(x)) exts.set(x, token);
 const extraIds = new Set(Object.keys(extras));
 const available = (id) => extraIds.has(id) || svgOf.has(id);
 
@@ -611,20 +707,20 @@ const KEEP_EXTS = new Set((
   'ts tsx js jsx mjs cjs mts cts d.ts py ipynb md mdx json jsonc yaml yml toml csv xlsx docx pptx pdf png jpg jpeg gif webp svg ' +
   'fig sketch lottie mmd mermaid sh bash zsh html css scss sass less sql go rs java kt swift c cpp cs rb php h hpp ai psd psb ' +
   'drawio tex typ nix zig test.tsx spec.tsx test.ts spec.ts test.js spec.js parquet rtf epub aac key numbers pages xd afdesign ' +
-  'lock env txt log'
+  'lock env txt log code-workspace mcp'
 ).split(' '));
 
 // Files that must keep resolving to a sensible icon (id = expected icon id after pruning).
 const REQUIRED_FILES = {
-  'index.ts': 'ts', 'index.mts': 'ts', 'index.cts': 'ts', 'app.tsx': 'react-ts', 'index.js': 'js', 'index.mjs': 'js',
+  'index.ts': 'ts', 'index.mts': 'ts', 'index.cts': 'ts', 'app.tsx': 'react', 'index.js': 'js', 'index.mjs': 'js',
   'index.cjs': 'js', 'app.jsx': 'react', 'main.py': 'python', 'notebook.ipynb': 'notebook', 'README.md': 'readme',
   'notes.md': 'markdown', 'page.mdx': 'mdx', 'data.json': 'brackets-yellow', 'tsconfig.jsonc': 'brackets-yellow',
   'config.yaml': 'yaml', 'config.yml': 'yaml', 'Cargo.toml': 'gear', 'data.csv': 'csv', 'report.xlsx': 'xlsx',
   'brief.docx': 'docx', 'deck.pptx': 'pptx', 'spec.pdf': 'pdf', 'photo.png': 'image', 'photo.jpg': 'image',
   'photo.jpeg': 'image', 'photo.webp': 'image', 'anim.gif': 'gif', 'logo.svg': 'svg', 'design.fig': 'figma',
   'ui.sketch': 'sketch', 'anim.lottie': 'lottie', 'diagram.mmd': 'mermaid', 'run.sh': 'shell', 'run.zsh': 'shell',
-  'run.bash': 'shell', Dockerfile: 'docker', 'docker-compose.yml': 'docker-pink', 'compose.yml': 'docker-pink',
-  'docker-compose.override.yml': 'docker-pink', '.gitignore': 'git', '.gitattributes': 'git', '.gitkeep': 'git',
+  'run.bash': 'shell', Dockerfile: 'docker', 'docker-compose.yml': 'docker', 'compose.yml': 'docker',
+  'docker-compose.override.yml': 'docker', '.gitignore': 'git', '.gitattributes': 'git', '.gitkeep': 'git',
   '.env': 'gear', '.env.local': 'gear', '.env.example': 'gear', '.env.production': 'gear', '.env.development': 'gear',
   'package-lock.json': 'node', 'pnpm-lock.yaml': 'pnpm', 'pnpm-workspace.yaml': 'pnpm', 'yarn.lock': 'yarn',
   'bun.lock': 'bun', 'bun.lockb': 'bun', 'uv.lock': 'uv', 'package.json': 'node', 'README.txt': 'readme',
@@ -709,9 +805,11 @@ const fileIconId = slots.file ? idOfPath(slots.file) : upstream.file;
 referenced.add(fileIconId);
 
 const written = new Map(); // file name -> svg (minified at write time)
+const pierreFiles = new Set();
 for (const id of [...referenced].sort()) {
   if (extraIds.has(id)) written.set(`${id}.svg`, extraFiles.get(`${id}.svg`));
   else written.set(`${id}.svg`, svgOf.get(id).svg);
+  if (svgOf.get(id)?.pierre) pierreFiles.add(`${id}.svg`);
 }
 // extra slot icons (folder-open etc.) are always written
 for (const p of Object.values(slots)) {
@@ -768,7 +866,8 @@ async function normalizeViewBox(svg, id) {
 for (const [file, svg] of [...written].sort()) {
   const id = file.replace(/\.svg$/, '');
   if (FILL_EXCEPTIONS[id] !== undefined) console.log(`note: optical fill exception ${id} = ${FILL_EXCEPTIONS[id]}`);
-  writeFileSync(join(outDir, file), `${await normalizeViewBox(minify(svg), id)}\n`);
+  const body = await normalizeViewBox(minify(svg), id);
+  writeFileSync(join(outDir, file), `${pierreFiles.has(file) ? `${PIERRE_COMMENT}\n` : ''}${body}\n`);
 }
 
 const sortObj = (map, fmt) =>
@@ -792,7 +891,7 @@ writeFileSync(join(outDir, 'theme.json'), `${JSON.stringify(theme, null, 2)}\n`)
 // ---------------------------------------------------------------------------
 const manifestPath = rel('orca-plugin.json');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-const entry = { id: 'flexoki-symbols', title: 'Flexoki Symbols', path: 'icons/theme.json' };
+const entry = { id: 'flexoki-icons', title: 'Flexoki Icons', path: 'icons/theme.json' };
 manifest.contributes.iconThemes = [entry];
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
@@ -806,6 +905,9 @@ for (const id of referenced) if (svgOf.has(id)) emitted[svgOf.get(id).kind]++;
 const extraKinds = { mono: 0, color: 0 };
 for (const e of Object.values(extras)) extraKinds[e.kind]++;
 
+console.log(`Pierre equivalence (token -> our ids [paint]):\n  ${pierreTable.join('\n  ')}`);
+console.log(`pierre-derived icon files: ${[...pierreFiles].sort().join(',')}`);
+console.log(`Symbols icons kept despite a related Pierre glyph: ${Object.keys(PIERRE_KEPT_OURS).join(', ')}`);
 console.log(`classification: mono ${bucket.mono.length}, color ${bucket.color.length}, drop ${bucket.drop.length}`);
 console.log(`emitted upstream icons: mono ${emitted.mono}, color ${emitted.color}; extras: mono ${extraKinds.mono}, color ${extraKinds.color}; folder 1`);
 console.log(`counts before pruning (merged with ${langAdded} language-derived extensions): fileExtensions ${before.fileExtensions}, fileNames ${before.fileNames}`);
@@ -813,7 +915,8 @@ console.log(`after availability filter + extras: fileExtensions ${countsAvail.fi
 console.log(`after dropping redundant fileNames: fileExtensions ${countsRedundantFree.fileExtensions}, fileNames ${countsRedundantFree.fileNames}`);
 console.log(`after pruning: fileExtensions ${exts.size}, fileNames ${names.size}, slots ${slotCount}, TOTAL refs ${total()} (Orca limit ${ORCA_MAX_REFS}, budget ${TOTAL_BUDGET}), SVGs ${written.size}`);
 console.log('required files:');
-for (const f of Object.keys(REQUIRED_FILES)) console.log(`  ${f.padEnd(20)} ${lookup(f).id}`);
+const sourceOf = (id) => (svgOf.get(id)?.pierre ? 'Pierre' : extraIds.has(id) ? 'extra' : 'Symbols');
+for (const f of Object.keys(REQUIRED_FILES)) console.log(`  ${f.padEnd(28)} ${lookup(f).id.padEnd(16)} ${sourceOf(lookup(f).id)}`);
 console.log(`unavailable icons: ${report.dropped.join('; ') || 'none'}`);
 if (report.oversize.length) console.log(`oversize (>64KB) skipped: ${report.oversize.join('; ')}`);
 console.log(`unmapped hex: ${report.unmapped.size ? [...report.unmapped].sort().join('; ') : 'none'}`);

@@ -1,0 +1,4 @@
+<!-- From @pierre/trees 1.0.0 (Apache-2.0, © 2025 Pierre Computer Company); <symbol> converted to standalone <svg>, geometry unchanged. See SOURCE.md. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path fill="currentColor" d="M1 12V4h2l2 2.5L7 4h2v8H7V7.5l-2 2-2-2V12zm9-3 3 3.5L16 9h-2V4h-2v5z"/>
+</svg>

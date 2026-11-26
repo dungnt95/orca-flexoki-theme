@@ -2,7 +2,7 @@ MIT License
 
 Copyright (c) 2023 Steph Ango (Flexoki color scheme, https://github.com/kepano/flexoki)
 Copyright (c) 2020-22 Miguel Solorio (Symbols file icons, https://github.com/miguelsolorio/vscode-symbols)
-Copyright (c) 2026 Dzung Nguyen (Orca plugin packaging)
+Copyright (c) 2026 Dzung Nguyen (Orca plugin packaging and extra icons)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,3 +21,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Third-party components and their licenses are listed in THIRD_PARTY_NOTICES.md. Files derived from @pierre/trees (the
+Pierre-derived SVGs in icons/ and the vendored sources in src/pierre/) are licensed under the Apache License 2.0
+(LICENSES/Apache-2.0.txt), not under the MIT license above.

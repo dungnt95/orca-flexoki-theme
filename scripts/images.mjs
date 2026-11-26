@@ -210,7 +210,7 @@ function galleryHtml() {
     return `<div class="gpanel" style="left:${left}px;background:${t['--worktree-sidebar']};border-color:${t['--worktree-sidebar-border']};color:${fg}">
       <div class="ghead" style="color:${t['--muted-foreground']}">FLEXOKI ${mode.toUpperCase()}</div><div class="ggrid">${cells}</div></div>`;
   };
-  return `<div class="gtitle"><h1>Flexoki Symbols</h1><p>Based on Symbols by Miguel Solorio (MIT)</p></div>${panel('light', 80)}${panel('dark', 820)}`;
+  return `<div class="gtitle"><h1>Flexoki Icons</h1><p>Based on Symbols by Miguel Solorio (MIT) and @pierre/trees by Pierre Computer Company (Apache-2.0)</p></div>${panel('light', 80)}${panel('dark', 820)}`;
 }
 
 const LAYOUTS = {
@@ -219,7 +219,7 @@ const LAYOUTS = {
   cover: page('linear-gradient(135deg,#F2F0E5 0%,#F2F0E5 50%,#282726 50%,#282726 100%)',
     windowHtml('dark', 'left:520px;top:170px;width:1000px;height:800px') +
     windowHtml('light', 'left:80px;top:40px;width:1000px;height:800px')),
-  'flexoki-symbols': page('#E6E4D9', galleryHtml())
+  'flexoki-icons': page('#E6E4D9', galleryHtml())
 };
 
 const work = join(root, '.work');
