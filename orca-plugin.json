@@ -2,7 +2,7 @@
   "manifestVersion": 2,
   "id": "flexoki-theme",
   "name": "Flexoki for Orca",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Flexoki, the inky color scheme for prose and code by Steph Ango (stephango.com/flexoki), as Light and Dark app themes with matching syntax and terminal colors.",
   "author": {
     "name": "Dzung Nguyen",

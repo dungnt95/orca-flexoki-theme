@@ -43,7 +43,10 @@ orca plugin dev load .
 
 ## Spec keys Orca cannot use
 
-Orca drops a text/surface token pair below 4.5:1 (3:1 for git colors) and paints its own neutral defaults instead. Flexoki light `tx-2` (`#6F6E69`) on `bg-2` (`#F2F0E5`) is 4.47:1, which made segmented controls and inactive tabs fall back to gray. The build nudges muted text toward `tx` just enough to pass (`#6D6C67` in light; dark is unchanged), and ignored files use `#878580`.
+Orca drops a text/surface token pair below 4.5:1 (3:1 for git colors) and paints its own neutral defaults instead. Two consequences shape the build:
+
+- `--muted` uses Flexoki `ui` (`#E6E4D9` / `#282726`), not the spec's `bg-2`. Orca paints segmented-control tracks with `--muted` on the `bg-2` sidebar, so `bg-2` made the track invisible. `--accent` sits one step above (`#DAD8CE` / `#343331`) so the selected segment still shows in dark mode.
+- Muted text is nudged toward `tx` just enough to pass on `ui`: `#666561` in light (spec `#6F6E69`), `#908E88` in dark (spec `#878580`). Ignored files use `#878580`.
 
 Orca's public theme API has no token for these, so they are not applied: `toolbarControlHover`, `placeholder`, `secondaryLabel`, `sidebarControlSurface`, `sidebarMutedForeground`, `warningSurface`, `messageAction*`, `searchMatch*`, `terminalScrollbar*`, and every `*Foreground` paired with error/warning/update.
 

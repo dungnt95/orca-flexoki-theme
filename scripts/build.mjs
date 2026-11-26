@@ -50,7 +50,10 @@ function readable(text, surfaces, ink, min = 4.6) {
 }
 
 function appTokens(c, accent) {
-  const mutedText = readable(c.mutedForeground, [c.canvas, c.surface, c.muted, c.toolbar], c.text);
+  // Why ui (`secondary`) for --muted, not the spec's bg-2: Orca paints segmented-control tracks and
+  // other quiet fills with --muted on top of the bg-2 sidebar, so bg-2 made them vanish.
+  const mutedFill = c.secondary;
+  const mutedText = readable(c.mutedForeground, [c.canvas, c.surface, mutedFill, c.toolbar], c.text, 4.55);
   return {
     '--background': c.canvas,
     '--editor-surface': c.surface,
@@ -63,9 +66,10 @@ function appTokens(c, accent) {
     '--primary-foreground': c.accentForeground,
     '--secondary': c.secondary,
     '--secondary-foreground': c.secondaryForeground,
-    '--muted': c.muted,
+    '--muted': mutedFill,
     '--muted-foreground': mutedText,
-    '--accent': c.sidebarRowHover,
+    // Why one step above --muted: dark segmented controls mark the selected segment with --accent.
+    '--accent': c.toolbarControlHover,
     '--accent-foreground': c.text,
     '--border': c.border,
     '--input': c.input,
